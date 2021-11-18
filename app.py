@@ -15,6 +15,10 @@ thread_lock = Lock()
 
 clients = {}
 
+@app.route("/")
+def hello_world():
+    return "<p>Hello, World!</p>"
+
 def background_thread():
     MOVE_JSON = {
         'DATA_TYPE':'moveCommand',

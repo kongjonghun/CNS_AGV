@@ -46,6 +46,7 @@ async def connect():
     # connect되면 알람 발생
     await send_alarm()
 
+# 알람 전송
 async def send_alarm():
     await sio.emit('alarm',json.dumps(alarm_json))
 
@@ -69,12 +70,13 @@ async def send_state():
 async def move_avg(data):
     print(str(data))
 
+# 서버 연결 해제
 @sio.event()
 async def disconnect():
     print('disconnected from server')
 
 async def main():
-    await sio.connect('http://127.0.0.1:5000',headers={'AGV_NO':'AGV00001'})
+    await sio.connect('http://172.31.32.116:5000',headers={'AGV_NO':'AGV00001'})
     await sio.wait() 
 
 if __name__ == '__main__':
