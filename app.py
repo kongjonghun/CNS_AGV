@@ -46,7 +46,7 @@ def connect():
     socketio.emit('state',json.dumps(REPORT_REQUEST), room=request.sid)
 
     with thread_lock:
-        if thread is None:
+        if thread is None: 
             thread = socketio.start_background_task(background_thread)
 
 @socketio.on('disconnect')
