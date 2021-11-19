@@ -5,9 +5,9 @@ from flask_socketio import send, emit
 import threading
 import json
 
-test_json = {
+REPORT_JSON = {
     'DATA_TYPE':'report',
-    'AGV_NO':'AGV00002',
+    'AGV_NO':'AGV00001',
     'LOCATION':'00010002',
     'STATE':'1',
     'MODE':'1',
@@ -21,7 +21,7 @@ test_json = {
     'AGV_FIRMWARE_VERSION':'1.01'
 }
 
-alarm_json = {
+ALARM_JSON = {
     'DATA_TYPE':'alarm',
     'AGV_NO':'AGV0001',
     'ALARMS':[
@@ -40,51 +40,38 @@ alarm_json = {
 }
 
 sio = socketio.AsyncClient()
-connection = False
+
 @sio.event
 async def connect():
-    global connection
-    connection = True
+    # 알람 전송 백그라운드 실행
+    await sio.start_background_task(send_alarm)
 
-    await send_alarm()
-
-async def send_connected():
-    await sio.emit('connected','connected')
-
-# 알람 전송
-async def send_alarm():
-    await sio.emit('alarm',json.dumps(alarm_json))
-
-# AGV 상태보고 전송
-async def send_state():
-    while True:
-        await sio.emit('state_rep',json.dumps(test_json))
-        await sio.sleep(3)
-
-# AGV 상태요청 receive
-@sio.on('state')
-async def state(data):
-    if not connection:
-        await sio.sleep(0.001)
-    json_data = json.loads(data)
-
-    # 상태보고 전송 Thread 시작
-    if json_data['DATA_TYPE'] == 'reportRqst':
-        sio.start_background_task(send_state)
-
-# AGV 이동 명령 receive
-@sio.on('move')
-async def move_avg(data):
-    print(str(data))
-
-# 서버 연결 해제
 @sio.event()
 async def disconnect():
     print('disconnected from server')
 
+async def send_alarm():
+    while True:
+        await sio.sleep(1)
+        await sio.emit('alarm_report',json.dumps(ALARM_JSON))
+
+# AGV 상태요청 받기
+@sio.on('state_request')
+async def state(data):
+    await sio.sleep(0.01)
+    data = json.loads(data)
+
+    # 상태요청 받으면 상태 전송
+    if data['DATA_TYPE'] == 'reportRqst':
+        await sio.emit('state_report',json.dumps(REPORT_JSON))
+
+@sio.on('move_request')
+async def move_agv(data):
+    print(json.dumps(data))
+
 async def main():
-    await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00002'})
-    #await sio.connect('http://127.0.0.1:5000',headers={'AGV_NO':'AGV00001'})
+    #await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00001'})
+    await sio.connect('http://127.0.0.1:5000',headers={'AGV_NO':'AGV00001'})
     await sio.wait() 
 
 if __name__ == '__main__':
