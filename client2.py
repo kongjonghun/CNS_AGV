@@ -7,7 +7,7 @@ import json
 
 test_json = {
     'DATA_TYPE':'report',
-    'AGV_NO':'AGV00001',
+    'AGV_NO':'AGV00002',
     'LOCATION':'00010002',
     'STATE':'1',
     'MODE':'1',
@@ -83,7 +83,7 @@ async def disconnect():
     print('disconnected from server')
 
 async def main():
-    await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00001'})
+    await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00002'})
     #await sio.connect('http://127.0.0.1:5000',headers={'AGV_NO':'AGV00001'})
     await sio.wait() 
 

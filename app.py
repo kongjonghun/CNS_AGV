@@ -58,8 +58,8 @@ def disconnect():
     print("disconnected")
     del clients[request.headers['AGV_NO']]
 
-@socketio.on('state')
-def state(data):
+@socketio.on('state_rep')
+def state_rep(data):
     print(str(data))
 
 @socketio.on('alarm')
