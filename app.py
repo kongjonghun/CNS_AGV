@@ -30,27 +30,25 @@ def background_thread():
         ]
     }
 
+    STATE_REQUEST = {
+        'DATA_TYPE':'reportRqst',
+        'AGV_NO':'AGV'
+    }
+    print(clients)
     while True:
-        socketio.sleep(3)
+        socketio.sleep(1)
         for AGV in clients.keys():
             MOVE_JSON['AGV_NO'] = AGV
-            socketio.emit('move',json.dumps(MOVE_JSON), room=clients[AGV])
+            STATE_REQUEST['AGV_NO'] = AGV
+            socketio.emit('move_request',json.dumps(MOVE_JSON), room=clients[AGV])
+            socketio.emit('state_request',json.dumps(STATE_REQUEST), room=clients[AGV])
 
 @socketio.on('connect')
 def connect():
     global thread
-
     clients[request.headers['AGV_NO']] = request.sid
-
-    REPORT_REQUEST = {
-        'DATA_TYPE':'reportRqst',
-        'AGV_NO':request.headers['AGV_NO'],
-    }
-
-    socketio.emit('state',json.dumps(REPORT_REQUEST), room=request.sid)
-
     with thread_lock:
-        if thread is None: 
+        if thread is None:
             thread = socketio.start_background_task(background_thread)
 
 @socketio.on('disconnect')
@@ -58,11 +56,11 @@ def disconnect():
     print("disconnected")
     del clients[request.headers['AGV_NO']]
 
-@socketio.on('state_rep')
-def state_rep(data):
+@socketio.on('state_report')
+def state(data):
     print(str(data))
 
-@socketio.on('alarm')
+@socketio.on('alarm_report')
 def alarm(data):
     print(str(data))
 
