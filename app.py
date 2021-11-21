@@ -54,6 +54,7 @@ def background_thread():
     
     while True:
         socketio.sleep(1)
+        print(clients)
         for AGV in clients.keys():
             MOVE_JSON['AGV_NO'] = AGV
             STATE_REQUEST['AGV_NO'] = AGV
@@ -78,13 +79,13 @@ def disconnect():
     del clients[request.headers['AGV_NO']]
 
 @socketio.on('state_report')
-def state(data):
+def state_report(data):
     print(str(data))
 
 @socketio.on('alarm_report')
-def alarm(data):
+def alarm_report(data):
     print(str(data))
 #test
 if __name__=="__main__":
-    socketio.run(app,host='0.0.0.0')
-    #socketio.run(app)
+    #socketio.run(app,host='0.0.0.0')
+    socketio.run(app)

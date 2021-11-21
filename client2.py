@@ -7,7 +7,7 @@ import json
 
 REPORT_JSON = {
     'DATA_TYPE':'report',
-    'AGV_NO':'AGV00001',
+    'AGV_NO':'AGV00002',
     'LOCATION':'00010002',
     'STATE':'1',
     'MODE':'1',
@@ -23,7 +23,7 @@ REPORT_JSON = {
 
 ALARM_JSON = {
     'DATA_TYPE':'alarm',
-    'AGV_NO':'AGV0001',
+    'AGV_NO':'AGV0002',
     'ALARMS':[
         {
             'ALARM_CD':'11',
@@ -70,8 +70,8 @@ async def move_agv(data):
     print(json.dumps(data))
 
 async def main():
-    #await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00001'})
-    await sio.connect('http://127.0.0.1:5000',headers={'AGV_NO':'AGV00001'})
+    await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00002'})
+    #await sio.connect('http://127.0.0.1:5000',headers={'AGV_NO':'AGV00002'})
     await sio.wait() 
 
 if __name__ == '__main__':
