@@ -39,7 +39,20 @@
 
 </body>
 <script>
-    var socket = io.connect('http://localhost:5000');
+    alarms_dict = {
+        '11' : '현 위치확인 안됨',
+        '12' : '직진 후, 위치 오류',
+        '13' : '우 90도회전 후, 위치 오류',
+        '14' : '좌 90도회전 후, 위치 오류',
+        '15' : '180도 회전 후, 위치 오류',
+        '16' : '후진 후, 위치 오류',
+        '21' : 'LOW BATTERY',
+        '22' : '과전류 발생',
+        '31' : 'Belt 구동 실패',
+        '32' : 'Tray 구동 실패'
+    }
+
+    var socket = io.connect('http://127.0.0.1:5000?client=monitor', headers={'AGV_NO':'Monitoring'});
     var agvCount = 0;
     var agvList = [];
 
@@ -60,25 +73,12 @@
     }
 
     $(document).ready(function(){
-        for(var i = 0; i < 30; i++) {
+        for (var i = 0; i < 30; i++) {
             $("tbody").append("<tr id=\"row" + i + "\" style=\"height: 20px\"></tr>");
-            for(var j = 0; j < 30; j++) {
+            for (var j = 0; j < 30; j++) {
                 $("#row" + i).append("<td id=\"" + (j+i*30) + "\" style=\"text-align:center;\"></td>");
             }
         }
-
-        $("#make-agv").on("click", function() {
-            var cnt = Number($("#agv-num").val());
-            socket.emit('agvAdded', cnt);
-            for(var i = agvCount; i < agvCount+cnt; i++) {
-                $("#clients").append("<iframe width=\"225\" height=\"127\" src=\"/agv?agvNo=" + i + "\"></iframe>");
-            }
-            $("#create-agv-box").html("");
-            agvCount = agvCount + cnt;
-            request = setInterval(function() {
-            socket.emit('request');
-            }, 3000);
-        })
 
         $(document).on("click", ".client-window", function() {
             console.log("click");
@@ -86,48 +86,58 @@
             console.log(agvNo);
         })
 
-        $("td").on("click", function() {
-            var agvNo = Number(this.id);
-            console.log(agvNo);
-            socket.emit('agvStatusRequestFromIndex', agvNo);
-        })
     });
 
-    socket.on('authenticationSuccess', function(data) {
+/*    socket.on('authenticationSuccess', function(data) {
         var loc = data['LOCATION'].split(',');
         var xIdx = Number(loc[0]);
         var yIdx = Number(loc[1]);
         $("#" + (xIdx+yIdx*30)).html(data['AGV_NO']);
         drawAgvOnBoard(xIdx, yIdx);
     });
-
-    socket.on('alarmToIndex', function(data) {
+*/
+/*    socket.on('alarmToIndex', function(data) {
         var loc = data['LOCATION'].split(',');
         var xIdx = Number(loc[0]);
         var yIdx = Number(loc[1]);
         warnAgvOnBoard(xIdx, yIdx);
+    });*/
+
+    socket.on('alarm_to_monitor', function(data) {
+        var agvNo = data['AGV_NO'];
+        var alarms = data['ALARMS'];
+        for (var i = 0; i < alarms.length; i++) {
+            if (alarms[i]['ALARM_STATUS'] == '1') {
+                $("#log").append("<p style=\"color: red; padding: 0px; margin: 0px;\">알람 발생!!! AGV" + agvNo + ": " + alarms_dict[alarms[i]['ALARM_CD']] + "!!!</p><br></br>");
+            }
+            else {
+                $("#log").append("<p style=\"color: blue; padding: 0px; margin: 0px;\">알람 해제!!! AGV" + agvNo + ": " + alarms_dict[alarms[i]['ALARM_CD']] + "!!!</p><br></br>");
+            }
+        }
     });
 
-    socket.on('alarm_view', function(data) {
-
+    socket.on('agv_connect_to_monitor', function(agvNo) {
+        $("#log").append("<p style=\"color: white; padding: 0px; margin: 0px;\">AGV" + agvNo + "가 연결되었습니다.</p><br></br>");
     });
 
-    socket.on('connect_view', function(agvNo) {
-        $("#log").append("AGV" + agvNo + "가 연결되었습니다.<br></br>");
+    socket.on('agv_disconnect_to_monitor', function(agvNo) {
+        $("#log").append("<p style=\"color: white; padding: 0px; margin: 0px;\">AGV" + agvNo + "가 없어졌습니다.</p><br></br>");
     });
 
-    socket.on('alarmStopToIndex', function(data) {
-        var loc = data['LOCATION'].split(',');
-        var xIdx = Number(loc[0]);
-        var yIdx = Number(loc[1]);
-        drawAgvOnBoard(xIdx, yIdx);
+
+
+    socket.on('state_to_monitor', function(data){
+        var agvNo = data['AGV_NO'];
+        var idx = findAGV(agvNo);
+        if (idx != -1) {
+            agvList.push(data);
+        }
+        else {
+            agvList[idx] = data
+        }
     });
 
-    socket.on('state_view', function(data){
-
-    });
-
-    socket.on('agvStatusToIndex', function(agvStatus) {
+/*    socket.on('agvStatusToIndex', function(agvStatus) {
         var agvNo = agvStatus['AGV_NO'];
         $("#agv-info").html("");
         $("#agv-info").append("<h1>AGV " + agvNo + "</h1>");
@@ -144,7 +154,7 @@
                                 "MIN_VOLTAGE : " + agvStatus['MIN_VOLTAGE'] + "<br>" +
                                 "BATTERY_LVL : " + agvStatus['BATTERY_LVL'] + "<br>" +
                                 "AGV_FIRMWARE_VERSION :" + agvStatus['AGV_FIRMWARE_VERSION']);
-    });
+    });*/
 
 
 </script>

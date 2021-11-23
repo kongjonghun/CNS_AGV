@@ -70,14 +70,15 @@ def background_thread():
 @socketio.on('connect')
 def connect():
     global thread
-
-    clients[request.sid] = {}
-    clients[request.sid]['sid'] = request.sid
-    clients[request.sid]['AGV_NO'] = 'TEMP'
-
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(background_thread)
+    if request.args.get('client') == 'monitor':     #모니터 connect 
+        print('Monitor connected')
+    else:    
+        clients[request.sid] = {}
+        clients[request.sid]['sid'] = request.sid
+        clients[request.sid]['AGV_NO'] = 'TEMP'
+        with thread_lock:
+            if thread is None:
+                thread = socketio.start_background_task(background_thread)
 
 # 클라이언트로부터 AGV NO 수신
 @socketio.on('my_agv_no')
@@ -88,17 +89,17 @@ def agv_no(data):
 # 상태 보고서 수신
 @socketio.on('state_report')
 def state(data):
-    socketio.emit('state_view', data)
+    socketio.emit('state_to_monitor', data)
 
 # 알람 보고서 수신
 @socketio.on('alarm_report')
 def alarm(data):
-    socketio.emit('alarm_view', data)
+    socketio.emit('alarm_to_monitor', data)
 
 # 연결 해제
 @socketio.on('disconnect')
 def disconnect():
-    socketio.emit('disconnect_view', agv_no = request.sid)
+    socketio.emit('agv_disconnect_to_monitor', request.headers['AGV_NO'])
     del clients[request.sid]
 
 if __name__=="__main__":
