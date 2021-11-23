@@ -9,7 +9,7 @@ import random
 Payload.max_decode_packets = 101
 async_mode = None
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r'*':{'origins':'*'}})
 app.config['SECRET_KEY'] = 'secret'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
