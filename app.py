@@ -5,6 +5,7 @@ from engineio.payload import Payload
 from flask_cors import CORS
 import json
 import random
+import sys
 
 Payload.max_decode_packets = 101
 
@@ -16,9 +17,9 @@ app.config['SECRET_KEY'] = 'secret'
 socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins='*')
 
 # JSON 파일 open
-with open('./server_json/Request.json', 'r', encoding='UTF-8') as f:
+with open('./json/server_json/Request.json', 'r', encoding='UTF-8') as f:
     STATE_REQUEST = json.load(f)
-with open('./server_json/Move.json', 'r', encoding='UTF-8') as f:
+with open('./json/server_json/Move.json', 'r', encoding='UTF-8') as f:
     MOVE_JSON = json.load(f)
 
 clients = {}
@@ -101,8 +102,7 @@ def disconnect():
     del clients[request.sid]
 
 if __name__=="__main__":
-    #local
-    socketio.run(app)
+    argument = sys.argv
+    host = argument[1] if len(argument) == 2 else 'localhost'
 
-    #server
-    #socketio.run(app,host='0.0.0.0')
+    socketio.run(app, host=host)

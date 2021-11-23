@@ -10,9 +10,9 @@ import time
 import sys
 
 # JSON 파일 open
-with open('./client_json/Report.json', 'r', encoding='UTF-8') as f:
+with open('./json/client_json/Report.json', 'r', encoding='UTF-8') as f:
     STATE_JSON = json.load(f)
-with open('./client_json/Alarm.json', 'r', encoding='UTF-8') as f:
+with open('./json/client_json/Alarm.json', 'r', encoding='UTF-8') as f:
     ALARM_JSON = json.load(f)
 
 # 소켓 클라이언트 설정
