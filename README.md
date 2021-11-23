@@ -1,5 +1,9 @@
 # 서버 실행 방법
-python app.py
+### local 실행시)
+- python app.py localhost
+- python app.py
+### aws 실행시)
+python app.py 0.0.0.0
 
 # 클라이언트 실행 방법
 python client.py AGV_NO
