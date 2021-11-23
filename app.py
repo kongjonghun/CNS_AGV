@@ -69,7 +69,7 @@ def connect():
     clients[request.headers['AGV_NO']]['sid'] = request.sid
     clients[request.headers['AGV_NO']]['blocks'] = make_route()
 
-    socketio.emit('connect_view', agv_no = request.headers['AGV_NO'])
+    socketio.emit('connect_view', request.headers['AGV_NO'])
 
     with thread_lock:
         if thread is None:
@@ -78,7 +78,7 @@ def connect():
 @socketio.on('disconnect')
 def disconnect():
     print("disconnected")
-    socketio.emit('disconnect_view', agv_no = request.headers['AGV_NO'])
+    socketio.emit('disconnect_view', request.headers['AGV_NO'])
     del clients[request.headers['AGV_NO']]
 
 @socketio.on('state')
