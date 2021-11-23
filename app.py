@@ -57,24 +57,27 @@ def background_thread():
         socketio.sleep(1)
         print(clients)
         for AGV in clients.keys():
-            MOVE_JSON['AGV_NO'] = AGV
-            STATE_REQUEST['AGV_NO'] = AGV
-            MOVE_JSON['BLOCKS'] = clients[AGV]['blocks']
-            socketio.emit('move_request',json.dumps(MOVE_JSON), room=clients[AGV]['sid'])
-            socketio.emit('state_request',json.dumps(STATE_REQUEST), room=clients[AGV]['sid'])
+            if not AGV == 'Monitoring':
+                MOVE_JSON['AGV_NO'] = AGV
+                STATE_REQUEST['AGV_NO'] = AGV
+                MOVE_JSON['BLOCKS'] = clients[AGV]['blocks']
+                socketio.emit('move_request',json.dumps(MOVE_JSON), room=clients[AGV]['sid'])
+                socketio.emit('state_request',json.dumps(STATE_REQUEST), room=clients[AGV]['sid'])
 
 @socketio.on('connect')
 def connect():
     global thread
     clients[request.headers['AGV_NO']] = {}
-    clients[request.headers['AGV_NO']]['sid'] = request.sid
-    clients[request.headers['AGV_NO']]['blocks'] = make_route()
+    if request.headers['AGV_NO'] == 'Monitoring':
+        clients[request.headers['AGV_NO']]['sid'] = request.sid
+        socketio.emit('connect_view', agv_no = request.headers['AGV_NO'])
+    else:
+        clients[request.headers['AGV_NO']]['sid'] = request.sid
+        clients[request.headers['AGV_NO']]['blocks'] = make_route()
 
-    socketio.emit('connect_view', agv_no = request.headers['AGV_NO'])
-
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(background_thread)
+        with thread_lock:
+            if thread is None:
+                thread = socketio.start_background_task(background_thread)
 
 @socketio.on('disconnect')
 def disconnect():
@@ -84,7 +87,7 @@ def disconnect():
 
 @socketio.on('state')
 def state(data):
-    socketio.emit('state_view', data)
+    socketio.emit('state_view', data, room = clients['Monitoring']['sid'])
     print(str(data))
 
 @socketio.on('alarm')
@@ -93,5 +96,5 @@ def alarm(data):
     print(str(data))
 #test
 if __name__=="__main__":
-    socketio.run(app,host='0.0.0.0')
-    #socketio.run(app)
+    #socketio.run(app,host='0.0.0.0')
+    socketio.run(app)
