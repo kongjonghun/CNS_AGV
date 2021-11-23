@@ -70,8 +70,8 @@ async def move_agv(data):
     print(json.dumps(data))
 
 async def main():
-    await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00001'})
-    #await sio.connect('http://127.0.0.1:5000',headers={'AGV_NO':'AGV00001'})
+    #await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00001'})
+    await sio.connect('http://127.0.0.1:5000')
     await sio.wait() 
 
 if __name__ == '__main__':

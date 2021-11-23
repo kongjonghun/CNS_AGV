@@ -9,9 +9,9 @@ import random
 Payload.max_decode_packets = 101
 async_mode = None
 app = Flask(__name__)
-CORS(app, resources={r'*':{'origins':'*'}})
 app.config['SECRET_KEY'] = 'secret'
-socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins='*')
+#socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 thread_lock = Lock()
 
@@ -24,7 +24,7 @@ direction_y = [0,1,0,-1]
 
 def make_route():
     BLOCKS = []
-    x, y = 1, 1
+    x, y = random.sample(range(1,31),1)[0], random.sample(range(1,31),1)[0]
     
     for _ in range(random.sample(range(20, 30),1)[0]):
         while True:
@@ -54,8 +54,7 @@ def background_thread():
     }
     
     while True:
-        socketio.sleep(1)
-        print(clients)
+        socketio.sleep(3)
         for AGV in clients.keys():
             if not AGV == 'Monitoring':
                 MOVE_JSON['AGV_NO'] = AGV
@@ -64,14 +63,23 @@ def background_thread():
                 socketio.emit('move_request',json.dumps(MOVE_JSON), room=clients[AGV]['sid'])
                 socketio.emit('state_request',json.dumps(STATE_REQUEST), room=clients[AGV]['sid'])
 
+@socketio.on('hi')
+def hi():
+    print("hi")
+
+
+monitor_sid = ''
+
 @socketio.on('connect')
 def connect():
     global thread
-    clients[request.headers['AGV_NO']] = {}
-    if request.headers['AGV_NO'] == 'Monitoring':
-        clients[request.headers['AGV_NO']]['sid'] = request.sid
-        socketio.emit('connect_view', agv_no = request.headers['AGV_NO'])
+    global monitor_sid
+    
+    if 'AGV_NO' not in request.headers:
+        #socketio.emit('connect_view', agv_no = request.headers['AGV_NO'])
+        monitor_sid = request.sid
     else:
+        clients[request.headers['AGV_NO']] = {}
         clients[request.headers['AGV_NO']]['sid'] = request.sid
         clients[request.headers['AGV_NO']]['blocks'] = make_route()
 
@@ -81,20 +89,24 @@ def connect():
 
 @socketio.on('disconnect')
 def disconnect():
-    print("disconnected")
-    socketio.emit('disconnect_view', agv_no = request.headers['AGV_NO'])
-    del clients[request.headers['AGV_NO']]
+    pass
+    #socketio.emit('disconnect_view', agv_no = request.headers['AGV_NO'])
 
-@socketio.on('state')
+@socketio.on('state_report')
 def state(data):
-    socketio.emit('state_view', data, room = clients['Monitoring']['sid'])
-    print(str(data))
+    global monitor_sid
+    if not monitor_sid == '':
+        pass
+        #socketio.emit('state_view', data, room = monitor_sid)
 
-@socketio.on('alarm')
+@socketio.on('alarm_report')
 def alarm(data):
-    socketio.emit('alarm_view', data)
-    print(str(data))
-#test
+    global monitor_sid
+    if not monitor_sid == '':
+        pass
+        #socketio.emit('alarm_view', data, room = monitor_sid)
+    
+
 if __name__=="__main__":
-    socketio.run(app,host='0.0.0.0')
-    #socketio.run(app)
+    #socketio.run(app,host='0.0.0.0')
+    socketio.run(app)
