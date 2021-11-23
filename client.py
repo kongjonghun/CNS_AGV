@@ -105,7 +105,6 @@ async def disconnect():
     print('disconnected from server')
 
 async def main():
-<<<<<<< HEAD
     STATE_JSON['AGV_NO'] = AGV_NO
 
     # local
@@ -114,11 +113,6 @@ async def main():
     # await sio.connect('http://13.124.72.207:5000')
 
     await sio.wait()
-=======
-    #await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00001'})
-    await sio.connect('http://127.0.0.1:5000')
-    await sio.wait() 
->>>>>>> 7a37a7a61e098e27eb84bc5a57429480d5b316c5
 
 if __name__ == '__main__':
     argument = sys.argv

@@ -13,14 +13,7 @@ thread_lock = Lock()
 async_mode = None
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
-<<<<<<< HEAD
 socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins='*')
-=======
-#socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins='*')
-socketio = SocketIO(app, async_mode=async_mode)
-thread = None
-thread_lock = Lock()
->>>>>>> 7a37a7a61e098e27eb84bc5a57429480d5b316c5
 
 # JSON 파일 open
 with open('./server_json/Request.json', 'r', encoding='UTF-8') as f:
@@ -31,7 +24,6 @@ with open('./server_json/Move.json', 'r', encoding='UTF-8') as f:
 clients = {}
 
 def make_route():
-<<<<<<< HEAD
     # 맵 크기
     MAX_N = MAX_M = 30 
     direction_x = [1,0,-1,0]
@@ -41,11 +33,7 @@ def make_route():
     y = random.sample(range(1, 31),1)[0]
     BLOCKS = [str(x).zfill(4) + str(y).zfill(4)]
 
-=======
-    BLOCKS = []
     x, y = random.sample(range(1,31),1)[0], random.sample(range(1,31),1)[0]
-    
->>>>>>> 7a37a7a61e098e27eb84bc5a57429480d5b316c5
     for _ in range(random.sample(range(20, 30),1)[0]):
         while True:
             direction = random.sample(range(0,3),1)[0]
@@ -67,7 +55,6 @@ def monitor():
 # sate, move 요청
 def background_thread():
     while True:
-<<<<<<< HEAD
         socketio.sleep(1)
         for sid in clients.keys():
             if not clients[sid]['AGV_NO'] == 'TEMP':
@@ -85,8 +72,7 @@ def connect():
 
     clients[request.sid] = {}
     clients[request.sid]['sid'] = request.sid
-    clients[request.sid]['blocks'] = make_route()
-    clients[request.sid]['AGV_NO'] = make_route()
+    clients[request.sid]['AGV_NO'] = 'TEMP'
 
     with thread_lock:
         if thread is None:
@@ -96,6 +82,7 @@ def connect():
 @socketio.on('my_agv_no')
 def agv_no(data):
     clients[request.sid]['AGV_NO'] = data
+    clients[request.sid]['blocks'] = make_route()
 
 # 상태 보고서 수신
 @socketio.on('state_report')
@@ -114,65 +101,8 @@ def disconnect():
     del clients[request.sid]
 
 if __name__=="__main__":
-    # local
-    #socketio.run(app,host='0.0.0.0')
-
-    # server
-=======
-        socketio.sleep(3)
-        for AGV in clients.keys():
-            if not AGV == 'Monitoring':
-                MOVE_JSON['AGV_NO'] = AGV
-                STATE_REQUEST['AGV_NO'] = AGV
-                MOVE_JSON['BLOCKS'] = clients[AGV]['blocks']
-                socketio.emit('move_request',json.dumps(MOVE_JSON), room=clients[AGV]['sid'])
-                socketio.emit('state_request',json.dumps(STATE_REQUEST), room=clients[AGV]['sid'])
-
-@socketio.on('hi')
-def hi():
-    print("hi")
-
-
-monitor_sid = ''
-
-@socketio.on('connect')
-def connect():
-    global thread
-    global monitor_sid
-    
-    if 'AGV_NO' not in request.headers:
-        #socketio.emit('connect_view', agv_no = request.headers['AGV_NO'])
-        monitor_sid = request.sid
-    else:
-        clients[request.headers['AGV_NO']] = {}
-        clients[request.headers['AGV_NO']]['sid'] = request.sid
-        clients[request.headers['AGV_NO']]['blocks'] = make_route()
-
-        with thread_lock:
-            if thread is None:
-                thread = socketio.start_background_task(background_thread)
-
-@socketio.on('disconnect')
-def disconnect():
-    pass
-    #socketio.emit('disconnect_view', agv_no = request.headers['AGV_NO'])
-
-@socketio.on('state_report')
-def state(data):
-    global monitor_sid
-    if not monitor_sid == '':
-        pass
-        #socketio.emit('state_view', data, room = monitor_sid)
-
-@socketio.on('alarm_report')
-def alarm(data):
-    global monitor_sid
-    if not monitor_sid == '':
-        pass
-        #socketio.emit('alarm_view', data, room = monitor_sid)
-    
-
-if __name__=="__main__":
-    #socketio.run(app,host='0.0.0.0')
->>>>>>> 7a37a7a61e098e27eb84bc5a57429480d5b316c5
+    #local
     socketio.run(app)
+
+    #server
+    #socketio.run(app,host='0.0.0.0')
