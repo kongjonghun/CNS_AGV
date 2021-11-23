@@ -2,13 +2,14 @@ from threading import Lock
 from flask import Flask, render_template, session, request, copy_current_request_context
 from flask_socketio import SocketIO, emit, join_room, leave_room, close_room, rooms, disconnect
 from engineio.payload import Payload
+from flask_cors import CORS
 import json
 import random
 
 Payload.max_decode_packets = 101
 async_mode = None
-
 app = Flask(__name__)
+CORS(app)
 app.config['SECRET_KEY'] = 'secret'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
@@ -69,7 +70,7 @@ def connect():
     clients[request.headers['AGV_NO']]['sid'] = request.sid
     clients[request.headers['AGV_NO']]['blocks'] = make_route()
 
-    socketio.emit('connect_view', request.headers['AGV_NO'])
+    socketio.emit('connect_view', agv_no = request.headers['AGV_NO'])
 
     with thread_lock:
         if thread is None:
@@ -78,7 +79,7 @@ def connect():
 @socketio.on('disconnect')
 def disconnect():
     print("disconnected")
-    socketio.emit('disconnect_view', request.headers['AGV_NO'])
+    socketio.emit('disconnect_view', agv_no = request.headers['AGV_NO'])
     del clients[request.headers['AGV_NO']]
 
 @socketio.on('state')
@@ -92,5 +93,5 @@ def alarm(data):
     print(str(data))
 #test
 if __name__=="__main__":
-    #socketio.run(app,host='0.0.0.0')
-    socketio.run(app)
+    socketio.run(app,host='0.0.0.0')
+    #socketio.run(app)
