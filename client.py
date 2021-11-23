@@ -20,7 +20,6 @@ sio = socketio.AsyncClient()
 
 # move 위치
 count = 0
-
 # AGV NO
 AGV_NO = 'TEMP'
 
@@ -31,7 +30,7 @@ temp_end_alarm = 10
 temp_start_alarm = 10
 ALARM_REPORT_JSON = {
     'DATA_TYPE': 'alarm',
-    'AGV_NO': AGV_NO,
+    'AGV_NO': 'TEMP',
     'ALARMS': []
 }
 
@@ -94,8 +93,9 @@ async def state(data):
 async def move_avg(data):
     global count
     move_data = json.loads(data)
-    
+    print(move_data)
     await sio.sleep(3)
+    print(1)
     STATE_JSON['LOCATION'] = move_data['BLOCKS'][count]
     count = count + 1 if count < len(move_data['BLOCKS']) - 1 else count
 
@@ -106,6 +106,7 @@ async def disconnect():
 
 async def main():
     STATE_JSON['AGV_NO'] = AGV_NO
+    ALARM_REPORT_JSON['AGV_NO'] = AGV_NO
 
     # local
     await sio.connect('http://127.0.0.1:5000')

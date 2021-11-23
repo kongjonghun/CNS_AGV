@@ -2,5 +2,6 @@
     "DATA_TYPE":"moveCommand",
     "AGV_NO":"temp",
     "ACTION":"1",
+    "DESTINATION":null,
     "BLOCKS":[]
 }
