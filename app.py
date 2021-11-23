@@ -69,6 +69,8 @@ def connect():
     clients[request.headers['AGV_NO']]['sid'] = request.sid
     clients[request.headers['AGV_NO']]['blocks'] = make_route()
 
+    socketio.emit('connect_view', agv_no = request.headers['AGV_NO'])
+
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(background_thread)
@@ -76,14 +78,17 @@ def connect():
 @socketio.on('disconnect')
 def disconnect():
     print("disconnected")
+    socketio.emit('disconnect_view', agv_no = request.headers['AGV_NO'])
     del clients[request.headers['AGV_NO']]
 
-@socketio.on('state_report')
-def state_report(data):
+@socketio.on('state')
+def state(data):
+    socketio.emit('state_view', data)
     print(str(data))
 
-@socketio.on('alarm_report')
-def alarm_report(data):
+@socketio.on('alarm')
+def alarm(data):
+    socketio.emit('alarm_view', data)
     print(str(data))
 #test
 if __name__=="__main__":
