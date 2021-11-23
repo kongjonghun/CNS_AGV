@@ -6,6 +6,7 @@ from flask_cors import CORS
 import json
 import random
 import sys
+import time
 
 Payload.max_decode_packets = 101
 
@@ -21,6 +22,10 @@ with open('./json/server_json/Request.json', 'r', encoding='UTF-8') as f:
     STATE_REQUEST = json.load(f)
 with open('./json/server_json/Move.json', 'r', encoding='UTF-8') as f:
     MOVE_JSON = json.load(f)
+
+now = time.strftime('20%y%m%d %H%M%S')
+alarm_f = open("./log/alarm_log/alarm" + now + ".txt","w", encoding='utf-8')
+state_f = open("./log/state_log/state" + now + ".txt","w", encoding='utf-8')
 
 clients = {}
 
@@ -61,6 +66,7 @@ def background_thread():
             if not clients[sid]['AGV_NO'] == 'TEMP':
                 MOVE_JSON['AGV_NO'] = clients[sid]['AGV_NO']
                 MOVE_JSON['BLOCKS'] = clients[sid]['blocks']
+                MOVE_JSON['DESTINATION'] = clients[sid]['destination']
                 STATE_REQUEST['AGV_NO'] = clients[sid]['AGV_NO']
 
                 socketio.emit('move_request',json.dumps(MOVE_JSON), room=sid)
@@ -85,16 +91,27 @@ def connect():
 def agv_no(data):
     clients[request.sid]['AGV_NO'] = data
     clients[request.sid]['blocks'] = make_route()
+    clients[request.sid]['destination'] = clients[request.sid]['blocks'][-1]
 
 # 상태 보고서 수신
 @socketio.on('state_report')
 def state(data):
+<<<<<<< HEAD
     socketio.emit('state_to_monitor', data)
+=======
+    socketio.emit('state_view', data)
+    state_f.write(str(data) + "\n")
+>>>>>>> b135c29234e371bed3e2f3fd671b7470868cf545
 
 # 알람 보고서 수신
 @socketio.on('alarm_report')
 def alarm(data):
+<<<<<<< HEAD
     socketio.emit('alarm_to_monitor', data)
+=======
+    socketio.emit('alarm_view', data)
+    alarm_f.write(str(data) + "\n")
+>>>>>>> b135c29234e371bed3e2f3fd671b7470868cf545
 
 # 연결 해제
 @socketio.on('disconnect')
