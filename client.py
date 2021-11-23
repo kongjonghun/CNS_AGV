@@ -1,78 +1,127 @@
 import asyncio
+from collections import deque
+from flask_socketio import send, emit
+from asyncio.windows_events import NULL
 from os import name
 import socketio
-from flask_socketio import send, emit
-import threading
+import random
 import json
+import time
+import sys
 
-REPORT_JSON = {
-    'DATA_TYPE':'report',
-    'AGV_NO':'AGV00001',
-    'LOCATION':'00010002',
-    'STATE':'1',
-    'MODE':'1',
-    'DIRECTION':'0',
-    'MAX_VELOCITY':'2.5',
-    'TILT_MAX_ANGLE':'20',
-    'BELT_MAX_SPEED':'1.5',
-    'COMMAND_WAIT_TIME':'10',
-    'MIN_VOLTAGE':'15.6',
-    'BATTERY_LVL':'30',
-    'AGV_FIRMWARE_VERSION':'1.01'
-}
+# JSON 파일 open
+with open('./client_json/Report.json', 'r', encoding='UTF-8') as f:
+    STATE_JSON = json.load(f)
+with open('./client_json/Alarm.json', 'r', encoding='UTF-8') as f:
+    ALARM_JSON = json.load(f)
 
-ALARM_JSON = {
-    'DATA_TYPE':'alarm',
-    'AGV_NO':'AGV0001',
-    'ALARMS':[
-        {
-            'ALARM_CD':'11',
-            'ALARM_STATUS':'1',
-            'OCCUR_DT':'20210817 13:44:22',
-        },
-        {
-            'ALARM_CD':'12',
-            'ALARM_STATUS':'0',
-            'OCCUR_DT':'20210817 13:44:22',
-            'END_DT':'20210817 13:46:55',
-        }
-    ]
-}
-
+# 소켓 클라이언트 설정
 sio = socketio.AsyncClient()
 
+# move 위치
+count = 0
+
+# AGV NO
+AGV_NO = 'TEMP'
+
+# 알람 전송
+ALARM_CD_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+ALARM_CD_USED = deque([])
+temp_end_alarm = 10
+temp_start_alarm = 10
+ALARM_REPORT_JSON = {
+    'DATA_TYPE': 'alarm',
+    'AGV_NO': AGV_NO,
+    'ALARMS': []
+}
+
+# 랜덤 ALARM_CD
+async def random_alarm():
+    global temp_end_alarm, temp_start_alarm
+
+    temp_start_alarm = random.choice(ALARM_CD_LIST)
+
+    ALARM_CD_LIST.remove(temp_start_alarm)
+    ALARM_CD_USED.append(temp_start_alarm)
+    
+    # 알람이 발생하고 5초 후 해제
+    if(len(ALARM_CD_USED) == 6):
+        temp_end_alarm = ALARM_CD_USED.popleft()
+        ALARM_CD_LIST.append(temp_end_alarm)
+
+    ALARM_JSON['ALARMS'][temp_start_alarm]['ALARM_STATUS'] = 1
+    ALARM_JSON['ALARMS'][temp_start_alarm]['OCCUR_DT'] = time.strftime('20%y%m%d %H:%M:%S')
+    ALARM_JSON['ALARMS'][temp_start_alarm]['END_DT'] = None
+
+    if(temp_end_alarm != 10):
+        ALARM_REPORT_JSON['ALARMS'].append(ALARM_JSON['ALARMS'][temp_end_alarm])
+        ALARM_JSON['ALARMS'][temp_end_alarm]['END_DT'] = time.strftime('20%y%m%d %H:%M:%S')
+        ALARM_JSON['ALARMS'][temp_end_alarm]['ALARM_STATUS'] = 0
+
+    ALARM_REPORT_JSON['ALARMS'].append(ALARM_JSON['ALARMS'][temp_start_alarm])
+
+# 알람상태/해제 전송 Thread
+async def send_alarm():
+    time_count = 0
+    while True:
+        if time_count % 2 == 0: # 1초 마다(0.5초 두 번)
+            ALARM_REPORT_JSON['ALARMS'] = []
+            await random_alarm()
+        await sio.emit('alarm_report', json.dumps(ALARM_REPORT_JSON, ensure_ascii=False))
+
+        await sio.sleep(0.5)
+        time_count += 1
+
+# connect되면 알람/해제 발생
 @sio.event
 async def connect():
-    # 알람 전송 백그라운드 실행
-    await sio.start_background_task(send_alarm)
+    # 알람상태/해제 전송 Thread
 
+    await sio.emit('my_agv_no',str(AGV_NO))
+    sio.start_background_task(send_alarm)
+    
+# AGV 상태요청 receive
+@sio.on('state_request')
+async def state(data):
+    json_data = json.loads(data)
+    print(json_data)
+    # AGV 상태보고 전송    
+    if json_data['DATA_TYPE'] == 'reportRqst':
+        await sio.emit('state_report', json.dumps(STATE_JSON, ensure_ascii=False))
+
+# AGV 이동 명령 receive
+@sio.on('move_request')
+async def move_avg(data):
+    global count
+    move_data = json.loads(data)
+    
+    await sio.sleep(3)
+    STATE_JSON['LOCATION'] = move_data['BLOCKS'][count]
+    count = count + 1 if count < len(move_data['BLOCKS']) - 1 else count
+
+# 서버 연결 해제
 @sio.event()
 async def disconnect():
     print('disconnected from server')
 
-async def send_alarm():
-    while True:
-        await sio.sleep(1)
-        await sio.emit('alarm_report',json.dumps(ALARM_JSON))
-
-# AGV 상태요청 받기
-@sio.on('state_request')
-async def state(data):
-    await sio.sleep(0.01)
-    data = json.loads(data)
-
-    # 상태요청 받으면 상태 전송
-    if data['DATA_TYPE'] == 'reportRqst':
-        await sio.emit('state_report',json.dumps(REPORT_JSON))
-
-@sio.on('move_request')
-async def move_agv(data):
-    print(json.dumps(data))
-
 async def main():
-    await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00001'})
-    #await sio.connect('http://127.0.0.1:5000',headers={'AGV_NO':'AGV00001'})
+<<<<<<< HEAD
+    STATE_JSON['AGV_NO'] = AGV_NO
+
+    # local
+    await sio.connect('http://127.0.0.1:5000')
+    # aws ec2
+    # await sio.connect('http://13.124.72.207:5000')
+
+    await sio.wait()
+=======
+    #await sio.connect('http://13.124.72.207:5000',headers={'AGV_NO':'AGV00001'})
+    await sio.connect('http://127.0.0.1:5000')
     await sio.wait() 
+>>>>>>> 7a37a7a61e098e27eb84bc5a57429480d5b316c5
 
 if __name__ == '__main__':
-    asyncio.run(main()) 
+    argument = sys.argv
+    AGV_NO = argument[1]
+    
+    asyncio.run(main())

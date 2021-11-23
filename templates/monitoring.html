@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>통신 프로젝트</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.0/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="server" style="height: 1000px; posision: relative">
+        <div id="map" style="width:980px; height:680px; display: inline-block;">
+            <table style="width:980px; max-height:980px">
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+        <div id="log" style="padding-left: 20px; display: inline-block; width: 300px; height: 680px; background-color: black; color: white;">
+        </div>
+        <div id="clients" style="background-color: grey; width: 300px; height: 680px; display: inline-block">
+        </div>
+    </div>
+
+<style>
+  table {
+    border: 1px solid #444444;
+  }
+  tr, td {
+    border: 1px solid #444444;
+  }
+  tr {
+    width: 1000px;
+    height: 20px;
+  }
+  td {
+    width: 20px;
+  }
+</style>
+
+</body>
+<script>
+    var socket = io.connect('http://localhost:5000');
+    var agvCount = 0;
+    var agvList = [];
+
+    function findAGV(agvNo) {
+        for (var i = 0; i < agvList.length; i++) {
+            if (agvList[i]["AGV_NO"] == agvNo) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function drawAgvOnBoard(xIdx, yIdx){
+        $("tr").eq(yIdx).children().eq(xIdx).css("background-color", "#00FF00");
+    }
+    function warnAgvOnBoard(xIdx, yIdx){
+        $("tr").eq(yIdx).children().eq(xIdx).css("background-color", "#FF0000");  
+    }
+
+    $(document).ready(function(){
+        for(var i = 0; i < 30; i++) {
+            $("tbody").append("<tr id=\"row" + i + "\" style=\"height: 20px\"></tr>");
+            for(var j = 0; j < 30; j++) {
+                $("#row" + i).append("<td id=\"" + (j+i*30) + "\" style=\"text-align:center;\"></td>");
+            }
+        }
+
+        $("#make-agv").on("click", function() {
+            var cnt = Number($("#agv-num").val());
+            socket.emit('agvAdded', cnt);
+            for(var i = agvCount; i < agvCount+cnt; i++) {
+                $("#clients").append("<iframe width=\"225\" height=\"127\" src=\"/agv?agvNo=" + i + "\"></iframe>");
+            }
+            $("#create-agv-box").html("");
+            agvCount = agvCount + cnt;
+            request = setInterval(function() {
+            socket.emit('request');
+            }, 3000);
+        })
+
+        $(document).on("click", ".client-window", function() {
+            console.log("click");
+            var agvNo = this.id;
+            console.log(agvNo);
+        })
+
+        $("td").on("click", function() {
+            var agvNo = Number(this.id);
+            console.log(agvNo);
+            socket.emit('agvStatusRequestFromIndex', agvNo);
+        })
+    });
+
+    socket.on('authenticationSuccess', function(data) {
+        var loc = data['LOCATION'].split(',');
+        var xIdx = Number(loc[0]);
+        var yIdx = Number(loc[1]);
+        $("#" + (xIdx+yIdx*30)).html(data['AGV_NO']);
+        drawAgvOnBoard(xIdx, yIdx);
+    });
+
+    socket.on('alarmToIndex', function(data) {
+        var loc = data['LOCATION'].split(',');
+        var xIdx = Number(loc[0]);
+        var yIdx = Number(loc[1]);
+        warnAgvOnBoard(xIdx, yIdx);
+    });
+
+    socket.on('alarm_view', function(data) {
+
+    });
+
+    socket.on('connect_view', function(agvNo) {
+        $("#log").append("AGV" + agvNo + "가 연결되었습니다.<br></br>");
+    });
+
+    socket.on('alarmStopToIndex', function(data) {
+        var loc = data['LOCATION'].split(',');
+        var xIdx = Number(loc[0]);
+        var yIdx = Number(loc[1]);
+        drawAgvOnBoard(xIdx, yIdx);
+    });
+
+    socket.on('state_view', function(data){
+
+    });
+
+    socket.on('agvStatusToIndex', function(agvStatus) {
+        var agvNo = agvStatus['AGV_NO'];
+        $("#agv-info").html("");
+        $("#agv-info").append("<h1>AGV " + agvNo + "</h1>");
+        $("#agv-info").append("DATA_TYPE : " + agvStatus['DATA_TYPE'] + "<br>" + 
+                                "AGV_NO : " + agvStatus['AGV_NO'] + "<br>" +
+                                "LOCATION : " + agvStatus['LOCATION'] + "<br>" +
+                                "STATE : " + agvStatus['STATE'] + "<br>" +
+                                "MODE : " + agvStatus['MODE'] + "<br>" +
+                                "DIRECTION : " + agvStatus['DIRECTION'] + "<br>" +
+                                "MAX_VELOCITY : " + agvStatus['MAX_VELOCITY'] + "<br>" +
+                                "TILT_MAX_ANGLE : " + agvStatus['TILT_MAX_ANGLE'] + "<br>" +
+                                "BELT_MAX_SPEED : " + agvStatus['BELT_MAX_SPEED'] + "<br>" +
+                                "COMMAND_WAIT_TIME : " + agvStatus['COMMAND_WAIT_TIME'] + "<br>" +
+                                "MIN_VOLTAGE : " + agvStatus['MIN_VOLTAGE'] + "<br>" +
+                                "BATTERY_LVL : " + agvStatus['BATTERY_LVL'] + "<br>" +
+                                "AGV_FIRMWARE_VERSION :" + agvStatus['AGV_FIRMWARE_VERSION']);
+    });
+
+
+</script>
+</html>
