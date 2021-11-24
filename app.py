@@ -62,36 +62,34 @@ def monitor():
 def background_thread():
     while True:
         socketio.sleep(1)
-        for sid in clients.keys():
-            if not clients[sid]['AGV_NO'] == 'TEMP':
-                MOVE_JSON['AGV_NO'] = clients[sid]['AGV_NO']
-                MOVE_JSON['BLOCKS'] = clients[sid]['blocks']
-                MOVE_JSON['DESTINATION'] = clients[sid]['destination']
-                STATE_REQUEST['AGV_NO'] = clients[sid]['AGV_NO']
+        for AGV in clients.keys():
+            MOVE_JSON['AGV_NO'] = AGV
+            MOVE_JSON['BLOCKS'] = clients[AGV]['blocks']
+            MOVE_JSON['DESTINATION'] = clients[AGV]['destination']
+            STATE_REQUEST['AGV_NO'] = AGV
 
-                socketio.emit('move_request',json.dumps(MOVE_JSON), room=sid)
-                socketio.emit('state_request',json.dumps(STATE_REQUEST), room=sid)
+            socketio.emit('move_request',json.dumps(MOVE_JSON), room=clients[AGV]['sid'])
+            socketio.emit('state_request',json.dumps(STATE_REQUEST), room=clients[AGV]['sid'])
 
 # 연결
 @socketio.on('connect')
 def connect():
     global thread
-    if request.args.get('client') == 'monitor':     #모니터 connect 
+
+    client = request.args.get('client')
+    if client == 'monitor':     #모니터 connect 
         print('Monitor connected')
-    else:    
-        clients[request.sid] = {}
-        clients[request.sid]['sid'] = request.sid
-        clients[request.sid]['AGV_NO'] = 'TEMP'
+    else:
+        print(client + ' connected')
+        clients[client] = {}
+        clients[client]['sid'] = request.sid
+        clients[client]['AGV_NO'] = client
+        clients[client]['blocks'] = make_route()
+        clients[client]['destination'] = clients[client]['blocks'][-1]
+
         with thread_lock:
             if thread is None:
                 thread = socketio.start_background_task(background_thread)
-
-# 클라이언트로부터 AGV NO 수신
-@socketio.on('my_agv_no')
-def agv_no(data):
-    clients[request.sid]['AGV_NO'] = data
-    clients[request.sid]['blocks'] = make_route()
-    clients[request.sid]['destination'] = clients[request.sid]['blocks'][-1]
 
 # 상태 보고서 수신
 @socketio.on('state_report')
@@ -108,8 +106,9 @@ def alarm(data):
 # 연결 해제
 @socketio.on('disconnect')
 def disconnect():
-    socketio.emit('agv_disconnect_to_monitor', request.headers['AGV_NO'])
-    del clients[request.sid]
+    client = request.args.get('client')
+    socketio.emit('agv_disconnect_to_monitor', clients[client]['AGV_NO'])
+    del clients[client]
 
 if __name__=="__main__":
     argument = sys.argv

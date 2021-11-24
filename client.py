@@ -76,7 +76,6 @@ async def send_alarm():
 async def connect():
     # 알람상태/해제 전송 Thread
 
-    await sio.emit('my_agv_no',str(AGV_NO))
     sio.start_background_task(send_alarm)
     
 # AGV 상태요청 receive
@@ -108,9 +107,9 @@ async def main():
     ALARM_REPORT_JSON['AGV_NO'] = AGV_NO
 
     # local
-    await sio.connect('http://127.0.0.1:5000')
+    await sio.connect('http://127.0.0.1:5000?client=' + AGV_NO)
     # aws ec2
-    # await sio.connect('http://13.124.72.207:5000')
+    # await sio.connect('http://13.124.72.207:5000?client=' +AGV_NO)
 
     await sio.wait()
 
