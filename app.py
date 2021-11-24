@@ -96,11 +96,13 @@ def agv_no(data):
 # 상태 보고서 수신
 @socketio.on('state_report')
 def state(data):
+    state_f.write(str(data) + "\n")
     socketio.emit('state_to_monitor', data)
 
 # 알람 보고서 수신
 @socketio.on('alarm_report')
 def alarm(data):
+    alarm_f.write(str(data) + "\n")
     socketio.emit('alarm_to_monitor', data)
 
 # 연결 해제

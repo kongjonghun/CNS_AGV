@@ -52,7 +52,7 @@
         '32' : 'Tray 구동 실패'
     }
 
-    var socket = io.connect('http://127.0.0.1:5000?client=monitor', headers={'AGV_NO':'Monitoring'});
+    var socket = io.connect('http://127.0.0.1:5000?client=monitor');
     var agvCount = 0;
     var agvList = [];
 

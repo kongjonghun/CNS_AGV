@@ -95,7 +95,6 @@ async def move_avg(data):
     move_data = json.loads(data)
     print(move_data)
     await sio.sleep(3)
-    print(1)
     STATE_JSON['LOCATION'] = move_data['BLOCKS'][count]
     count = count + 1 if count < len(move_data['BLOCKS']) - 1 else count
 
