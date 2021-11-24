@@ -20,8 +20,6 @@ sio = socketio.AsyncClient()
 
 # move 위치
 count = 0
-# AGV NO
-AGV_NO = 'TEMP'
 
 # 알람 전송
 ALARM_CD_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -105,16 +103,16 @@ async def disconnect():
 async def main():
     STATE_JSON['AGV_NO'] = AGV_NO
     ALARM_REPORT_JSON['AGV_NO'] = AGV_NO
-
-    # local
-    await sio.connect('http://127.0.0.1:5000?client=' + AGV_NO)
-    # aws ec2
-    # await sio.connect('http://13.124.72.207:5000?client=' +AGV_NO)
-
+    
+    if server == '0':
+        await sio.connect('http://localhost:5000?client=' + AGV_NO)
+    else:
+        await sio.connect('http://13.124.72.207:5000?client=' + AGV_NO)
     await sio.wait()
 
 if __name__ == '__main__':
     argument = sys.argv
     AGV_NO = argument[1]
-    
+    server = argument[2]
+
     asyncio.run(main())
